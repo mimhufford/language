@@ -59,10 +59,13 @@ int chartodec(char c)
     }
 };
 
-void num(istream& i, ostream& o)
+Token num(istream& i)
 {
+    Token t;
+    t.type = INT;
+    t.ival = 0;
+
     int base = 10;
-    int result = 0;
     char first = i.get();
 
     if (first == '0')
@@ -75,7 +78,7 @@ void num(istream& i, ostream& o)
     }
     else 
     {
-        result = chartodec(first);
+        t.ival = chartodec(first);
     }
 
     while (isdigit(i.peek()) || i.peek() == '_' || (tolower(i.peek()) >= 'a' && tolower(i.peek()) <= 'f'))
@@ -83,62 +86,73 @@ void num(istream& i, ostream& o)
         char c = i.get();
         if (c == '_') continue;
         int digit = chartodec(c);
-        result = result*base + digit;
+        t.ival = t.ival*base + digit;
     }
 
-    o << result;
+    return t;
 }
 
-void ident(istream& i, ostream& o)
+Token ident(istream& i)
 {
-    string id = "";
+    Token t;
+    t.type = IDENTIFIER;
+    t.sval = "";
 
     while (isalnum(i.peek()) || i.peek() == '_')
     {
-        char c = i.get();
-        id += c;
+        t.sval += (char)i.get();
     }
 
-    o << id;
+    return t;
 }
 
-void quote(istream& i, ostream& o)
+Token quote(istream& i)
 {
+    Token t;
+    t.type = STRING;
+    t.sval = "";
+
     char opener = i.get();
 
     while (i.peek() != opener)
     {
         char c = i.get();
         if (c == '\\' && i.peek() == opener) i.get(c); // dump the escape char
-        o << c;
+        t.sval += c;
     }
 
     i.get(); // dump the end quote
+
+    return t;
 }
 
-void op(istream& i, ostream& o)
+Token op(istream& i)
 {
     char first = i.get();
     char next  = i.peek();
 
-    o << first;
+    Token t;
+    t.type = BINARY;
+    t.sval = first;
 
     switch (first)
     {
-        case '+': if (next == '=') o << (char)i.get(); break;
-        case '-': if (next == '=') o << (char)i.get(); break;
-        case '/': if (next == '=') o << (char)i.get(); break;
-        case '*': if (next == '=') o << (char)i.get(); break;
-        case '>': if (next == '=') o << (char)i.get(); break;
-        case '<': if (next == '=') o << (char)i.get(); break;
-        case '%': if (next == '=') o << (char)i.get(); break;
-        case '~': if (next == '=') o << (char)i.get(); break;
-        case '&': if (next == '&') o << (char)i.get(); 
-                  if (next == '=') o << (char)i.get(); break;
-        case '|': if (next == '|') o << (char)i.get(); 
-                  if (next == '=') o << (char)i.get(); break;
+        case '+': if (next == '=') t.sval += (char)i.get(); break;
+        case '-': if (next == '=') t.sval += (char)i.get(); break;
+        case '/': if (next == '=') t.sval += (char)i.get(); break;
+        case '*': if (next == '=') t.sval += (char)i.get(); break;
+        case '>': if (next == '=') t.sval += (char)i.get(); break;
+        case '<': if (next == '=') t.sval += (char)i.get(); break;
+        case '%': if (next == '=') t.sval += (char)i.get(); break;
+        case '~': if (next == '=') t.sval += (char)i.get(); break;
+        case '&': if (next == '&') t.sval += (char)i.get(); 
+                  if (next == '=') t.sval += (char)i.get(); break;
+        case '|': if (next == '|') t.sval += (char)i.get(); 
+                  if (next == '=') t.sval += (char)i.get(); break;
         default : break;
     }
+
+    return t;
 }
 
 bool    isop(char c) { return c == '+' || c == '/' || c == '*' || c == '-' || c == '%' || c == '*' || c == '=' || c == '<' || c == '>' || c == '&' || c == '|' || c == '~'; }
@@ -146,28 +160,43 @@ bool  isopen(char c) { return c == '(' || c == '{' || c == '['; }
 bool isclose(char c) { return c == ')' || c == '}' || c == ']'; }
 bool isquote(char c) { return c == '"' || c == '\''; }
 
-string lex(string input)
+vector<Token> lex(string input)
 {
     istringstream i(input);
-    ostringstream o;
-    vector<Token> tokens;
+    vector<Token> o;
 
     while (i.peek() != -1)
     {
         char c = i.peek();
 
-        if      (isdigit(c)) { o << "NUMBER "     ;   num(i, o); o << "\n"; }
-        else if (isalpha(c)) { o << "IDENT  "     ; ident(i, o); o << "\n"; }
-        else if (isquote(c)) { o << "STRING "     ; quote(i, o); o << "\n"; }
-        else if (isop(c))    { o << "OP     "     ;    op(i, o); o << "\n"; }
-        else if (isopen(c))  { o << "OPEN   " << c; i.get();     o << "\n"; }
-        else if (isclose(c)) { o << "CLOSE  " << c; i.get();     o << "\n"; }
-        else if (c == ',')   { o << "COMMA  " << c; i.get();     o << "\n"; }
-        else if (isspace(c)) { i.get(); /* dump whitespace */               }
-        else                 { o << "?????? " << c; i.get();     o << "\n"; }
+        if      (isdigit(c)) { o.push_back(num(i));   }
+        else if (isalpha(c)) { o.push_back(ident(i)); }
+        else if (isquote(c)) { o.push_back(quote(i)); }
+        else if (isop(c))    { o.push_back(op(i));    }
+        else if (isopen(c))  { i.get();  }
+        else if (isclose(c)) { i.get();  }
+        else if (c == ',')   { i.get();  }
+        else if (isspace(c)) { i.get();  }
+        else                 { i.get();  }
     }
 
-    return o.str();
+    return o;
+}
+
+string print(Token t)
+{
+    ostringstream o;
+    switch (t.type)
+    {
+        case INT:        o << "INT       " << t.ival; return o.str();
+        case FLOAT:      o << "FLOAT     " << t.ival; return o.str();
+        case CHAR:       o << "CHAR      " << t.ival; return o.str();
+        case STRING:     o << "STRING    " << t.sval; return o.str();
+        case IDENTIFIER: o << "IDENTFIER " << t.sval; return o.str();
+        case BINARY:     o << "BINARY    " << t.sval; return o.str();
+        case UNARY:      o << "UNARY     " << t.sval; return o.str();
+		default:         o << "UNKNOWN!!!";           return o.str();
+    }
 }
 
 int main(int argc, char* argv[])
@@ -192,8 +221,10 @@ int main(int argc, char* argv[])
 
     for (auto test : tests)
     {
-        cout << test << "     \n";
-        cout << "-------------\n";
-        cout << lex(test) << "\n";
+        cout << test << "            \n";
+        cout << "--------------------\n";
+        for (auto token : lex(test))
+            cout << print(token) << "\n";
+        cout << "                    \n";
     }
 }
