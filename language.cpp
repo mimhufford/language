@@ -7,7 +7,7 @@ using namespace std;
 
 enum TokenType
 {
-    INT, FLOAT, CHAR, STRING, IDENTIFIER, BINARY, UNARY, 
+    INT, FLOAT, CHAR, STRING, IDENTIFIER, OPERATOR, KEYWORD
 };
 
 enum TokenMod
@@ -103,6 +103,21 @@ Token ident(istream& i)
         t.sval += (char)i.get();
     }
 
+    vector<string> keywords = {
+        "return", "while", "for", "if", "else", "struct",
+        "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64",
+        "f32", "f64", "char", "string", "void",
+    }; 
+
+    for (auto keyword : keywords)
+    {
+        if (t.sval == keyword)
+        {
+            t.type = KEYWORD;
+            break;
+        }
+    }
+
     return t;
 }
 
@@ -132,7 +147,7 @@ Token op(istream& i)
     char next  = i.peek();
 
     Token t;
-    t.type = BINARY;
+    t.type = OPERATOR;
     t.sval = first;
 
     switch (first)
@@ -193,8 +208,8 @@ string print(Token t)
         case CHAR:       o << "CHAR      " << t.ival; return o.str();
         case STRING:     o << "STRING    " << t.sval; return o.str();
         case IDENTIFIER: o << "IDENTFIER " << t.sval; return o.str();
-        case BINARY:     o << "BINARY    " << t.sval; return o.str();
-        case UNARY:      o << "UNARY     " << t.sval; return o.str();
+        case OPERATOR:   o << "OPERATOR  " << t.sval; return o.str();
+        case KEYWORD:    o << "KEYWORD   " << t.sval; return o.str();
 		default:         o << "UNKNOWN!!!";           return o.str();
     }
 }
@@ -206,17 +221,17 @@ int main(int argc, char* argv[])
         "0xFF",
         "0123",
         "0b1010",
-        "int a = 34",
+        "i32 a = 34",
         "a += 34",
         "go ()",
-        "float result = add(1, 2)",
-        "int big = 10_000_000",
+        "f32 result = add(1, 2)",
+        "i64 big = 10_000_000",
         "string quote = \"Mim said \\\"holy shit, it works!\\\", Greg was not amused.\"",
         "string name = \"mim\"",
         "if a >= b return a else return b",
         "test(a(), b)",
         "a %= 5",
-        "int* pi = &a",
+        "i32* pi = &a",
     };
 
     for (auto test : tests)
