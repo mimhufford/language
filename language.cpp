@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -29,13 +30,9 @@ struct Token
 {
     TokenType type;
     TokenMod  mod;
-
-    union
-    {
-        int    ival;
-        double fval;
-        string sval;
-    };
+    int       ival;
+    double    fval;
+    string    sval;
 };
 
 int chartodec(char c)
@@ -94,11 +91,15 @@ void num(istream& i, ostream& o)
 
 void ident(istream& i, ostream& o)
 {
+    string id = "";
+
     while (isalnum(i.peek()) || i.peek() == '_')
     {
         char c = i.get();
-        o << c;
+        id += c;
     }
+
+    o << id;
 }
 
 void quote(istream& i, ostream& o)
@@ -130,11 +131,17 @@ void op(istream& i, ostream& o)
         case '*': if (next == '=') o << (char)i.get(); break;
         case '>': if (next == '=') o << (char)i.get(); break;
         case '<': if (next == '=') o << (char)i.get(); break;
+        case '%': if (next == '=') o << (char)i.get(); break;
+        case '~': if (next == '=') o << (char)i.get(); break;
+        case '&': if (next == '&') o << (char)i.get(); 
+                  if (next == '=') o << (char)i.get(); break;
+        case '|': if (next == '|') o << (char)i.get(); 
+                  if (next == '=') o << (char)i.get(); break;
         default : break;
     }
 }
 
-bool    isop(char c) { return c == '+' || c == '/' || c == '*' || c == '-' || c == '=' || c == '<' || c == '>'; }
+bool    isop(char c) { return c == '+' || c == '/' || c == '*' || c == '-' || c == '%' || c == '*' || c == '=' || c == '<' || c == '>' || c == '&' || c == '|' || c == '~'; }
 bool  isopen(char c) { return c == '(' || c == '{' || c == '['; }
 bool isclose(char c) { return c == ')' || c == '}' || c == ']'; }
 bool isquote(char c) { return c == '"' || c == '\''; }
@@ -143,6 +150,7 @@ string lex(string input)
 {
     istringstream i(input);
     ostringstream o;
+    vector<Token> tokens;
 
     while (i.peek() != -1)
     {
@@ -177,6 +185,9 @@ int main(int argc, char* argv[])
         "string quote = \"Mim said \\\"holy shit, it works!\\\", Greg was not amused.\"",
         "string name = \"mim\"",
         "if a >= b return a else return b",
+        "test(a(), b)",
+        "a %= 5",
+        "int* pi = &a",
     };
 
     for (auto test : tests)
