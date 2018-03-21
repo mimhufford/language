@@ -62,10 +62,11 @@ int chartodec(char c)
     }
 };
 
-void num(istream& i, ostream& o, char first)
+void num(istream& i, ostream& o)
 {
     int base = 10;
     int result = 0;
+    char first = i.get();
 
     if (first == '0')
     {
@@ -100,8 +101,10 @@ void ident(istream& i, ostream& o)
     }
 }
 
-void quote(istream& i, ostream& o, char opener)
+void quote(istream& i, ostream& o)
 {
+    char opener = i.get();
+
     while (i.peek() != opener)
     {
         char c = i.get();
@@ -110,6 +113,25 @@ void quote(istream& i, ostream& o, char opener)
     }
 
     i.get(); // dump the end quote
+}
+
+void op(istream& i, ostream& o)
+{
+    char first = i.get();
+    char next  = i.peek();
+
+    o << first;
+
+    switch (first)
+    {
+        case '+': if (next == '=') o << (char)i.get(); break;
+        case '-': if (next == '=') o << (char)i.get(); break;
+        case '/': if (next == '=') o << (char)i.get(); break;
+        case '*': if (next == '=') o << (char)i.get(); break;
+        case '>': if (next == '=') o << (char)i.get(); break;
+        case '<': if (next == '=') o << (char)i.get(); break;
+        default : break;
+    }
 }
 
 bool    isop(char c) { return c == '+' || c == '/' || c == '*' || c == '-' || c == '=' || c == '<' || c == '>'; }
@@ -121,19 +143,20 @@ string lex(string input)
 {
     istringstream i(input);
     ostringstream o;
-    char c;
 
-    while (i.get(c))
+    while (i.peek() != -1)
     {
-        if      (isdigit(c)) { o << "NUMBER "     ;   num(i, o, c); o << "\n"; }
-        else if (isalpha(c)) { o << "IDENT  " << c; ident(i, o)   ; o << "\n"; }
-        else if (isquote(c)) { o << "STRING "     ; quote(i, o, c); o << "\n"; }
-        else if (isop(c))    { o << "OP     " << c;                 o << "\n"; }
-        else if (isopen(c))  { o << "OPEN   " << c;                 o << "\n"; }
-        else if (isclose(c)) { o << "CLOSE  " << c;                 o << "\n"; }
-        else if (c == ',')   { o << "COMMA  " << c;                 o << "\n"; }
-        else if (isspace(c)) {                                                 }
-        else                 { o << "?????? " << c;                 o << "\n"; }
+        char c = i.peek();
+
+        if      (isdigit(c)) { o << "NUMBER "     ;   num(i, o); o << "\n"; }
+        else if (isalpha(c)) { o << "IDENT  "     ; ident(i, o); o << "\n"; }
+        else if (isquote(c)) { o << "STRING "     ; quote(i, o); o << "\n"; }
+        else if (isop(c))    { o << "OP     "     ;    op(i, o); o << "\n"; }
+        else if (isopen(c))  { o << "OPEN   " << c; i.get();     o << "\n"; }
+        else if (isclose(c)) { o << "CLOSE  " << c; i.get();     o << "\n"; }
+        else if (c == ',')   { o << "COMMA  " << c; i.get();     o << "\n"; }
+        else if (isspace(c)) { i.get(); /* dump whitespace */               }
+        else                 { o << "?????? " << c; i.get();     o << "\n"; }
     }
 
     return o.str();
@@ -142,11 +165,12 @@ string lex(string input)
 int main(int argc, char* argv[])
 {
     string tests[] = {
+        "12 + 24",
         "0xFF",
         "0123",
         "0b1010",
-        "12 + 24",
         "int a = 34",
+        "a += 34",
         "go ()",
         "float result = add(1, 2)",
         "int big = 10_000_000",
