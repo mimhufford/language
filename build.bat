@@ -1,0 +1,1 @@
+cl language.cpp && del language.obj && language
