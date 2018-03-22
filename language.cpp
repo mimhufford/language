@@ -3,15 +3,16 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include <cstdint>
 
 using namespace std;
 
 enum TokenType
 {
-    ERROR, INT, FLOAT, CHAR, STRING, IDENTIFIER, OPERATOR, KEYWORD, OPEN, CLOSE,
+    ERROR, INT, FLOAT, CHAR, STRING, IDENTIFIER, OPERATOR, KEYWORD, OPEN, CLOSE, COMMA, DOT,
 };
 
-enum TokenSubT
+enum TokenSubType
 {
     // BINARY OPERATORS
     ADD, SUB, MUL, DIV, MOD, LSHIFT, RSHIFT,
@@ -32,11 +33,11 @@ enum TokenSubT
 
 struct Token
 {
-    TokenType type;
-    TokenSubT subt;
-    int       ival;
-    double    fval;
-    string    sval;
+    TokenType    type;
+    TokenSubType subtype;
+    int64_t      ival;
+    double       fval;
+    string       sval;
 };
 
 int chartodec(char c)
@@ -63,11 +64,17 @@ int chartodec(char c)
     }
 };
 
+bool    isop(char c) { return c == '+' || c == '/' || c == '*' || c == '-' || c == '%' || c == '*' || c == '=' || c == '<' || c == '>' || c == '&' || c == '|' || c == '~'; }
+bool  isopen(char c) { return c == '(' || c == '{' || c == '['; }
+bool isclose(char c) { return c == ')' || c == '}' || c == ']'; }
+bool isquote(char c) { return c == '"' || c == '\''; }
+bool isnumch(char c) { return isdigit(c) || c == '_' || c == '.' || (tolower(c) >= 'a' && tolower(c) <= 'f'); }
+
 Token num(istream& i)
 {
     Token t;
     t.type = INT;
-    t.subt = DEC;
+    t.subtype = DEC;
     t.ival = 0;
 
     int base = 10;
@@ -77,19 +84,21 @@ Token num(istream& i)
     {
         char next = tolower(i.peek());
 
-        if      (next == 'x')   { t.subt = HEX; base = 16; i.get(); }
-        else if (next == 'b')   { t.subt = BIN; base = 2;  i.get(); }
-        else if (isdigit(next)) { t.subt = OCT; base = 8;           }
+        if      (next == '.')   { assert(!"HANDLE FLOATS!");           }
+        else if (next == 'x')   { t.subtype = HEX; base = 16; i.get(); }
+        else if (next == 'b')   { t.subtype = BIN; base = 2;  i.get(); }
+        else if (isdigit(next)) { t.subtype = OCT; base = 8;           }
     }
     else 
     {
         t.ival = chartodec(first);
     }
 
-    while (isdigit(i.peek()) || i.peek() == '_' || (tolower(i.peek()) >= 'a' && tolower(i.peek()) <= 'f'))
+    while (isnumch(i.peek()))
     {
         char c = i.get();
         if (c == '_') continue;
+        if (c == '.') assert(!"HANDLE FLOATS!");
         int digit = chartodec(c);
         assert(digit < base);
         t.ival = t.ival*base + digit;
@@ -112,7 +121,8 @@ Token ident(istream& i)
     vector<string> keywords = {
         "return", "while", "for", "if", "else", "struct",
         "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64",
-        "f32", "f64", "char", "string", "void",
+        "f32", "f64", "char", "string", "void", "sizeof",
+        "do", "continue", "break", 
     }; 
 
     for (auto keyword : keywords)
@@ -186,10 +196,10 @@ Token open(istream& i)
 
     switch (opener)
     {
-        case '(': { t.subt = PAREN;   return t; }
-        case '{': { t.subt = BRACE;   return t; }
-        case '[': { t.subt = BRACKET; return t; }
-        default : { t.type = ERROR;  return t; }
+        case '(': { t.subtype = PAREN;   return t; }
+        case '{': { t.subtype = BRACE;   return t; }
+        case '[': { t.subtype = BRACKET; return t; }
+        default : { t.type    = ERROR;   return t; }
     }
 }
 
@@ -203,17 +213,32 @@ Token close(istream& i)
 
     switch (closer)
     {
-        case ')': { t.subt = PAREN;   return t; }
-        case '}': { t.subt = BRACE;   return t; }
-        case ']': { t.subt = BRACKET; return t; }
-        default : { t.type = ERROR;  return t; }
+        case ')': { t.subtype = PAREN;   return t; }
+        case '}': { t.subtype = BRACE;   return t; }
+        case ']': { t.subtype = BRACKET; return t; }
+        default : { t.type    = ERROR;   return t; }
     }
 }
 
-bool    isop(char c) { return c == '+' || c == '/' || c == '*' || c == '-' || c == '%' || c == '*' || c == '=' || c == '<' || c == '>' || c == '&' || c == '|' || c == '~'; }
-bool  isopen(char c) { return c == '(' || c == '{' || c == '['; }
-bool isclose(char c) { return c == ')' || c == '}' || c == ']'; }
-bool isquote(char c) { return c == '"' || c == '\''; }
+Token comma(istream& i)
+{
+    Token t;
+    t.type = COMMA;
+
+    i.get();
+
+    return t;
+}
+
+Token dot(istream& i)
+{
+    Token t;
+    t.type = DOT;
+
+    i.get();
+
+    return t;
+}
 
 vector<Token> lex(string input)
 {
@@ -230,15 +255,16 @@ vector<Token> lex(string input)
         else if (isop(c))    { o.push_back(op(i));    }
         else if (isopen(c))  { o.push_back(open(i));  }
         else if (isclose(c)) { o.push_back(close(i)); }
-        else if (c == ',')   { i.get();  }
-        else if (isspace(c)) { i.get();  }
-        else                 { i.get();  }
+        else if (c == ',')   { o.push_back(comma(i)); }
+        else if (c == '.')   { o.push_back(dot(i));   }
+        else if (isspace(c)) { i.get(); /* EAT IT */  }
+        else                 { assert(!"UNHANDLED");  }
     }
 
     return o;
 }
 
-string print(Token t)
+string debugprint(Token t)
 {
     ostringstream o;
     switch (t.type)
@@ -252,7 +278,9 @@ string print(Token t)
         case KEYWORD:    o << "KEYWORD   " << t.sval; return o.str();
         case OPEN:       o << "OPEN      " << t.sval; return o.str();
         case CLOSE:      o << "CLOSE     " << t.sval; return o.str();
-		default:         o << "UNKNOWN!!!";           return o.str();
+        case COMMA:      o << "COMMA     " << ","   ; return o.str();
+        case DOT:        o << "DOT       " << "."   ; return o.str();
+        default:         assert(!"UNHANDLED TOKEN!"); return o.str();
     }
 }
 
@@ -265,7 +293,7 @@ int main(int argc, char* argv[])
         "0b1010",
         "i32 a = -34",
         "a += 34",
-        "go ()",
+        "print(player.position)",
         "f32 result = add(1, 2)",
         "i64 big = 10_000_000",
         "string quote = \"Mim said \\\"holy shit, it works!\\\", Greg was not amused.\"",
@@ -281,7 +309,7 @@ int main(int argc, char* argv[])
         cout << test << "            \n";
         cout << "--------------------\n";
         for (auto token : lex(test))
-            cout << print(token) << "\n";
+            cout << debugprint(token) << "\n";
         cout << "                    \n";
     }
 }
