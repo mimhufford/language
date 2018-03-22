@@ -2,15 +2,16 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cassert>
 
 using namespace std;
 
 enum TokenType
 {
-    INT, FLOAT, CHAR, STRING, IDENTIFIER, OPERATOR, KEYWORD
+    ERROR, INT, FLOAT, CHAR, STRING, IDENTIFIER, OPERATOR, KEYWORD, OPEN, CLOSE,
 };
 
-enum TokenMod
+enum TokenSubT
 {
     // BINARY OPERATORS
     ADD, SUB, MUL, DIV, MOD, LSHIFT, RSHIFT,
@@ -24,12 +25,15 @@ enum TokenMod
 
     // INT TYPES
     BIN, OCT, DEC, HEX, CHR,
+
+    // OPEN / CLOSE
+    PAREN, BRACE, BRACKET,
 };
 
 struct Token
 {
     TokenType type;
-    TokenMod  mod;
+    TokenSubT subt;
     int       ival;
     double    fval;
     string    sval;
@@ -63,6 +67,7 @@ Token num(istream& i)
 {
     Token t;
     t.type = INT;
+    t.subt = DEC;
     t.ival = 0;
 
     int base = 10;
@@ -72,9 +77,9 @@ Token num(istream& i)
     {
         char next = tolower(i.peek());
 
-        if      (next == 'x')   { base = 16; i.get(); }
-        else if (next == 'b')   { base = 2;  i.get(); }
-        else if (isdigit(next)) { base = 8;           }
+        if      (next == 'x')   { t.subt = HEX; base = 16; i.get(); }
+        else if (next == 'b')   { t.subt = BIN; base = 2;  i.get(); }
+        else if (isdigit(next)) { t.subt = OCT; base = 8;           }
     }
     else 
     {
@@ -86,6 +91,7 @@ Token num(istream& i)
         char c = i.get();
         if (c == '_') continue;
         int digit = chartodec(c);
+        assert(digit < base);
         t.ival = t.ival*base + digit;
     }
 
@@ -170,6 +176,40 @@ Token op(istream& i)
     return t;
 }
 
+Token open(istream& i)
+{
+    Token t;
+    t.type = OPEN;
+
+    char opener = i.get();
+    t.sval = opener;
+
+    switch (opener)
+    {
+        case '(': { t.subt = PAREN;   return t; }
+        case '{': { t.subt = BRACE;   return t; }
+        case '[': { t.subt = BRACKET; return t; }
+        default : { t.type = ERROR;  return t; }
+    }
+}
+
+Token close(istream& i)
+{
+    Token t;
+    t.type = CLOSE;
+
+    char closer = i.get();
+    t.sval = closer;
+
+    switch (closer)
+    {
+        case ')': { t.subt = PAREN;   return t; }
+        case '}': { t.subt = BRACE;   return t; }
+        case ']': { t.subt = BRACKET; return t; }
+        default : { t.type = ERROR;  return t; }
+    }
+}
+
 bool    isop(char c) { return c == '+' || c == '/' || c == '*' || c == '-' || c == '%' || c == '*' || c == '=' || c == '<' || c == '>' || c == '&' || c == '|' || c == '~'; }
 bool  isopen(char c) { return c == '(' || c == '{' || c == '['; }
 bool isclose(char c) { return c == ')' || c == '}' || c == ']'; }
@@ -188,8 +228,8 @@ vector<Token> lex(string input)
         else if (isalpha(c)) { o.push_back(ident(i)); }
         else if (isquote(c)) { o.push_back(quote(i)); }
         else if (isop(c))    { o.push_back(op(i));    }
-        else if (isopen(c))  { i.get();  }
-        else if (isclose(c)) { i.get();  }
+        else if (isopen(c))  { o.push_back(open(i));  }
+        else if (isclose(c)) { o.push_back(close(i)); }
         else if (c == ',')   { i.get();  }
         else if (isspace(c)) { i.get();  }
         else                 { i.get();  }
@@ -210,6 +250,8 @@ string print(Token t)
         case IDENTIFIER: o << "IDENTFIER " << t.sval; return o.str();
         case OPERATOR:   o << "OPERATOR  " << t.sval; return o.str();
         case KEYWORD:    o << "KEYWORD   " << t.sval; return o.str();
+        case OPEN:       o << "OPEN      " << t.sval; return o.str();
+        case CLOSE:      o << "CLOSE     " << t.sval; return o.str();
 		default:         o << "UNKNOWN!!!";           return o.str();
     }
 }
@@ -221,7 +263,7 @@ int main(int argc, char* argv[])
         "0xFF",
         "0123",
         "0b1010",
-        "i32 a = 34",
+        "i32 a = -34",
         "a += 34",
         "go ()",
         "f32 result = add(1, 2)",
