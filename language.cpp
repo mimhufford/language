@@ -70,21 +70,42 @@ bool isclose(char c) { return c == ')' || c == '}' || c == ']'; }
 bool isquote(char c) { return c == '"' || c == '\''; }
 bool isnumch(char c) { return isdigit(c) || c == '_' || c == '.' || (tolower(c) >= 'a' && tolower(c) <= 'f'); }
 
+Token floatnum(istream& i, ostringstream& o)
+{
+    o << '.';
+
+    Token t;
+    t.type = FLOAT;
+
+    while (isdigit(i.peek()) || i.peek() == '_')
+    {
+        char c = i.get();
+        if (c == '_') continue;
+        int digit = chartodec(c);
+        o << c;
+    }
+
+    t.fval = atof(o.str().c_str());
+
+    return t;
+}
+
 Token num(istream& i)
 {
     Token t;
     t.type = INT;
     t.subtype = DEC;
     t.ival = 0;
-
     int base = 10;
     char first = i.get();
+    ostringstream o;
+    o << first;
 
     if (first == '0')
     {
         char next = tolower(i.peek());
 
-        if      (next == '.')   { assert(!"HANDLE FLOATS!");           }
+        if      (next == '.')   { i.get();      return floatnum(i, o); }
         else if (next == 'x')   { t.subtype = HEX; base = 16; i.get(); }
         else if (next == 'b')   { t.subtype = BIN; base = 2;  i.get(); }
         else if (isdigit(next)) { t.subtype = OCT; base = 8;           }
@@ -98,10 +119,11 @@ Token num(istream& i)
     {
         char c = i.get();
         if (c == '_') continue;
-        if (c == '.') assert(!"HANDLE FLOATS!");
+        if (c == '.') return floatnum(i, o);
         int digit = chartodec(c);
         assert(digit < base);
         t.ival = t.ival*base + digit;
+        o << c;
     }
 
     return t;
@@ -270,7 +292,7 @@ string debugprint(Token t)
     switch (t.type)
     {
         case INT:        o << "INT       " << t.ival; return o.str();
-        case FLOAT:      o << "FLOAT     " << t.ival; return o.str();
+        case FLOAT:      o << "FLOAT     " << t.fval; return o.str();
         case CHAR:       o << "CHAR      " << t.ival; return o.str();
         case STRING:     o << "STRING    " << t.sval; return o.str();
         case IDENTIFIER: o << "IDENTFIER " << t.sval; return o.str();
@@ -302,6 +324,8 @@ int main(int argc, char* argv[])
         "test(a(), b)",
         "a %= 5",
         "i32* pi = &a",
+        "f32 pi = 3.141",
+        "f32 angle = 0.01",
     };
 
     for (auto test : tests)
