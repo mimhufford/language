@@ -221,10 +221,20 @@ Token op(istream& i)
         case '-': t.type = SUB;    if (next == '=') { t.type = SUB_ASSIGN; t.sval += (char)i.get(); } break;
         case '/': t.type = DIV;    if (next == '=') { t.type = DIV_ASSIGN; t.sval += (char)i.get(); } break;
         case '*': t.type = MUL;    if (next == '=') { t.type = MUL_ASSIGN; t.sval += (char)i.get(); } break;
-        case '>': t.type = GT ;    if (next == '=') { t.type = GTEQ;       t.sval += (char)i.get(); } break;
-        case '<': t.type = LT ;    if (next == '=') { t.type = LTEQ;       t.sval += (char)i.get(); } break;
         case '%': t.type = MOD;    if (next == '=') { t.type = MOD_ASSIGN; t.sval += (char)i.get(); } break;
         case '^': t.type = XOR;    if (next == '=') { t.type = XOR_ASSIGN; t.sval += (char)i.get(); } break;
+        case '>': t.type = GT ;
+                  if (next == '=') { t.type = GTEQ; t.sval += (char)i.get(); break; }
+                  if (next == '>') { 
+                      t.type = RSHIFT; t.sval += (char)i.get();
+                      if (i.peek() == '=') { t.type = RSHIFT_ASSIGN; t.sval += (char)i.get(); break; }
+                  } break;
+        case '<': t.type = LT ;
+                  if (next == '=') { t.type = LTEQ; t.sval += (char)i.get(); break; }
+                  if (next == '<') { 
+                      t.type = LSHIFT; t.sval += (char)i.get();
+                      if (i.peek() == '=') { t.type = LSHIFT_ASSIGN; t.sval += (char)i.get(); break; }
+                  } break;
         case '&': t.type = AND;
                   if (next == '&') { t.type = AND_AND;    t.sval += (char)i.get(); break; }
                   if (next == '=') { t.type = AND_ASSIGN; t.sval += (char)i.get(); break; }
@@ -280,28 +290,30 @@ string debugprint(Token t)
     ostringstream o;
     switch (t.type)
    {
-        case INT:        o << "INT       " << t.ival; return o.str();
-        case FLOAT:      o << "FLOAT     " << t.fval; return o.str();
-        case STRING:     o << "STRING    " << t.sval; return o.str();
-        case IDENTIFIER: o << "IDENTFIER " << t.sval; return o.str();
-        case KEYWORD:    o << "KEYWORD   " << t.sval; return o.str();
-        case COMMA:      o << "COMMA     " << ","   ; return o.str();
-        case DOT:        o << "DOT       " << "."   ; return o.str();
-        case LPAREN:     o << "OPEN      " << "("   ; return o.str();
-        case LBRACE:     o << "OPEN      " << "{"   ; return o.str();
-        case LBRACKET:   o << "OPEN      " << "["   ; return o.str();
-        case RPAREN:     o << "CLOSE     " << ")"   ; return o.str();
-        case RBRACE:     o << "CLOSE     " << "}"   ; return o.str();
-        case RBRACKET:   o << "CLOSE     " << "]"   ; return o.str();
-        case ADD:        o << "OPERATOR  " << "+"   ; return o.str();
-        case ASSIGN:     o << "OPERATOR  " << "="   ; return o.str();
-        case ADD_ASSIGN: o << "OPERATOR  " << "+="  ; return o.str();
-        case MOD_ASSIGN: o << "OPERATOR  " << "%="  ; return o.str();
-        case GTEQ:       o << "OPERATOR  " << ">="  ; return o.str();
-        case SUB:        o << "OPERATOR  " << "-"   ; return o.str();
-        case MUL:        o << "OPERATOR  " << "*"   ; return o.str();
-        case AND:        o << "OPERATOR  " << "&"   ; return o.str();
-        default:         assert(!"UNHANDLED TOKEN!"); return o.str();
+        case INT:           o << "INT       " << t.ival; return o.str();
+        case FLOAT:         o << "FLOAT     " << t.fval; return o.str();
+        case STRING:        o << "STRING    " << t.sval; return o.str();
+        case IDENTIFIER:    o << "IDENTFIER " << t.sval; return o.str();
+        case KEYWORD:       o << "KEYWORD   " << t.sval; return o.str();
+        case COMMA:         o << "COMMA     " << ","   ; return o.str();
+        case DOT:           o << "DOT       " << "."   ; return o.str();
+        case LPAREN:        o << "OPEN      " << "("   ; return o.str();
+        case LBRACE:        o << "OPEN      " << "{"   ; return o.str();
+        case LBRACKET:      o << "OPEN      " << "["   ; return o.str();
+        case RPAREN:        o << "CLOSE     " << ")"   ; return o.str();
+        case RBRACE:        o << "CLOSE     " << "}"   ; return o.str();
+        case RBRACKET:      o << "CLOSE     " << "]"   ; return o.str();
+        case ADD:           o << "OPERATOR  " << "+"   ; return o.str();
+        case ASSIGN:        o << "OPERATOR  " << "="   ; return o.str();
+        case ADD_ASSIGN:    o << "OPERATOR  " << "+="  ; return o.str();
+        case MOD_ASSIGN:    o << "OPERATOR  " << "%="  ; return o.str();
+        case GTEQ:          o << "OPERATOR  " << ">="  ; return o.str();
+        case LSHIFT:        o << "OPERATOR  " << "<<"  ; return o.str();
+        case LSHIFT_ASSIGN: o << "OPERATOR  " << "<<=" ; return o.str();
+        case SUB:           o << "OPERATOR  " << "-"   ; return o.str();
+        case MUL:           o << "OPERATOR  " << "*"   ; return o.str();
+        case AND:           o << "OPERATOR  " << "&"   ; return o.str();
+        default:            assert(!"UNHANDLED TOKEN!"); return o.str();
     }
 }
  
@@ -325,6 +337,8 @@ int main(int argc, char* argv[])
         "i32* pi = &a",
         "f32 pi = 3.141",
         "f32 angle = 0.01",
+        "log <<= 4",
+        "log = 1 << 4",
     };
  
     for (auto test : tests)
