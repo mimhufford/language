@@ -1,0 +1,114 @@
+#pragma once
+
+#include <iostream>
+#include <string>
+
+#include "common.h"
+#include "types.h"
+#include "lex.h"
+#include "parse.h"
+
+std::string DebugPrintDecl(Decl* d)
+{
+    std::ostringstream o;
+
+    switch (d->type)
+    {
+        case VAR:     o << "(VAR " << d->datatype << " " << "d->val" << " " << DebugPrintDecl(d->expr) << ")"; break;
+        case LITERAL: o << "(LIT " << *(long long *)d->val << ")"; break;
+        default:      o << "UNHANDLED"; break;
+    }
+
+    return o.str();
+}
+
+void TestParse()
+{
+    std::string tests[] = {
+        "i32 a = 4",
+        "void test() { f64 a = 15 }",
+    };
+
+    std::cout << "=PARSE==============\n";
+    std::cout << "                    \n";
+
+    for (auto test : tests)
+    {
+        std::cout << test << "            \n";
+        std::cout << "--------------------\n";
+        std::cout << DebugPrintDecl(Parse(Lex(test))) << "\n";
+    }
+    std::cout << "                    \n";
+}
+
+std::string DebugPrintToken(Token t)
+{
+    std::ostringstream o;
+    switch (t.type)
+    {
+        case INT:           o << "INT       " << t.ival; return o.str();
+        case FLOAT:         o << "FLOAT     " << t.fval; return o.str();
+        case STRING:        o << "STRING    " << t.sval; return o.str();
+        case IDENTIFIER:    o << "IDENTFIER " << t.sval; return o.str();
+        case KEYWORD:       o << "KEYWORD   " << t.sval; return o.str();
+        case COMMA:         o << "COMMA     " << ","   ; return o.str();
+        case DOT:           o << "DOT       " << "."   ; return o.str();
+        case LPAREN:        o << "OPEN      " << "("   ; return o.str();
+        case LBRACE:        o << "OPEN      " << "{"   ; return o.str();
+        case LBRACKET:      o << "OPEN      " << "["   ; return o.str();
+        case RPAREN:        o << "CLOSE     " << ")"   ; return o.str();
+        case RBRACE:        o << "CLOSE     " << "}"   ; return o.str();
+        case RBRACKET:      o << "CLOSE     " << "]"   ; return o.str();
+        case ADD:           o << "OPERATOR  " << "+"   ; return o.str();
+        case ASSIGN:        o << "OPERATOR  " << "="   ; return o.str();
+        case ADD_ASSIGN:    o << "OPERATOR  " << "+="  ; return o.str();
+        case MOD_ASSIGN:    o << "OPERATOR  " << "%="  ; return o.str();
+        case GTEQ:          o << "OPERATOR  " << ">="  ; return o.str();
+        case LSHIFT:        o << "OPERATOR  " << "<<"  ; return o.str();
+        case LSHIFT_ASSIGN: o << "OPERATOR  " << "<<=" ; return o.str();
+        case SUB:           o << "OPERATOR  " << "-"   ; return o.str();
+        case MUL:           o << "OPERATOR  " << "*"   ; return o.str();
+        case AND:           o << "OPERATOR  " << "&"   ; return o.str();
+        default:            assert(!"UNHANDLED TOKEN!"); return o.str();
+    }
+}
+void TestLex()
+{
+    std::string tests[] = {
+        "12 + 24",
+        "0xFF",
+        "0123",
+        "0b1010",
+        "i32 a = -34",
+        "a += 34",
+        "print(player.position)",
+        "f32 result = add(1, 2)",
+        "i64 big = 10_000_000",
+        "string quote = \"Mim said \\\"holy shit, it works!\\\", Greg was not amused.\"",
+        "string name = \"mim\"",
+        "if a >= b return a else return b",
+        "test(a(), b)",
+        "a %= 5",
+        "i32* pi = &a",
+        "f32 pi = 3.141",
+        "f32 angle = 0.01",
+        "log <<= 4",
+        "log = 1 << 4",
+    };
+ 
+    std::cout << "=LEX================\n";
+    std::cout << "                    \n";
+
+    for (auto test : tests)
+    {
+        std::cout << test << "            \n";
+        std::cout << "--------------------\n";
+        auto tokens = Lex(test);
+        while (!tokens.empty())
+        {
+            std::cout << DebugPrintToken(tokens.front()) << "\n";
+            tokens.pop();
+        }
+        std::cout << "                    \n";
+    }
+}

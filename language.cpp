@@ -1,17 +1,8 @@
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <cassert>
-#include <cstdint>
-
-#include "parse.cpp"
-
-using namespace std;
+#include "test.h"
 
 int main(int argc, char* argv[])
 {
-    cout << '\n';
-    testlex();
-    testparse();
+    std::cout << '\n';
+    TestLex();
+    TestParse();
 }
