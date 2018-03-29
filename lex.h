@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <queue>
+#include <unordered_map>
 #include <cassert>
 
 #include "types.h"
@@ -32,8 +33,7 @@ Token Float(std::istream& i, std::ostringstream& o)
 Token Num(std::istream& i)
 {
     Token t;
-    t.type = INT;
-    t.subtype = DEC;
+    t.type = DEC;
     t.ival = 0;
     int base = 10;
     char first = i.get();
@@ -45,9 +45,9 @@ Token Num(std::istream& i)
         char next = tolower(i.peek());
  
         if      (next == '.')   { i.get(); return Float(i, o); }
-        else if (next == 'x')   { t.subtype = HEX; base = 16; i.get(); }
-        else if (next == 'b')   { t.subtype = BIN; base = 2;  i.get(); }
-        else if (isdigit(next)) { t.subtype = OCT; base = 8;           }
+        else if (next == 'x')   { t.type = HEX; base = 16; i.get(); }
+        else if (next == 'b')   { t.type = BIN; base = 2;  i.get(); }
+        else if (isdigit(next)) { t.type = OCT; base = 8;           }
     }
     else
     {
@@ -79,21 +79,21 @@ Token Ident(std::istream& i)
         t.sval += (char)i.get();
     }
  
-    std::vector<std::string> keywords = {
-        "return", "while", "for", "if", "else", "struct",
-        "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64",
-        "f32", "f64", "char", "string", "void", "sizeof",
-        "do", "continue", "break",
-    };
+    std::unordered_map<std::string, TokenType> keywords;
+    keywords.emplace("type",     TYPE);
+    keywords.emplace("func",     FUNC);
+    keywords.emplace("const",    CONST);
+    keywords.emplace("if",       IF);
+    keywords.emplace("else",     ELSE);
+    keywords.emplace("var",      VAR);
+    keywords.emplace("loop",     LOOP);
+    keywords.emplace("continue", CONTINUE);
+    keywords.emplace("break",    BREAK);
+    keywords.emplace("return",   RETURN);
  
-    for (auto keyword : keywords)
-    {
-        if (t.sval == keyword)
-        {
-            t.type = KEYWORD;
-            break;
-        }
-    }
+    auto find = keywords.find(t.sval);
+    if (find != keywords.end())
+        t.type = find->second;
  
     return t;
 }

@@ -12,11 +12,21 @@ enum TokenType
     LBRACKET, RBRACKET,
     COMMA,
     DOT,
-    KEYWORD,
-    INT,
+    IDENTIFIER,
     FLOAT,
     STRING,
-    IDENTIFIER,
+
+    BEGIN_INT,
+    //-------------------
+    BIN, OCT, DEC, HEX, CHR,
+    //-------------------
+    END_INT,
+
+    BEGIN_KEYWORD,
+    //-------------------
+    TYPE, FUNC, CONST, IF, ELSE, VAR, LOOP, CONTINUE, BREAK, RETURN,
+    //-------------------
+    END_KEYWORD,    
  
     BEGIN_1ST_PRECENDENCE,
     //-------------------
@@ -48,15 +58,9 @@ enum TokenType
     END_4TH_PRECENDENCE,
 };
  
-enum TokenSubType
-{
-    BIN, OCT, DEC, HEX, CHR,
-};
- 
 struct Token
 {
     TokenType    type;
-    TokenSubType subtype;
     long long    ival;
     double       fval;
     std::string  sval;
@@ -64,7 +68,7 @@ struct Token
 
 enum DeclType
 {
-    VAR, LITERAL
+    VARIABLE, LITERAL
 };
 
 enum Type

@@ -46,12 +46,19 @@ std::string DebugPrintToken(Token t)
     std::ostringstream o;
     switch (t.type)
     {
-        case INT:           o << "INT       " << t.ival; return o.str();
+        case DEC:           o << "INT DEC   " << t.ival; return o.str();
+        case BIN:           o << "INT BIN   " << t.ival; return o.str();
+        case OCT:           o << "INT OCT   " << t.ival; return o.str();
+        case HEX:           o << "INT HEX   " << t.ival; return o.str();
+        case CHR:           o << "INT CHR   " << t.ival; return o.str();
         case FLOAT:         o << "FLOAT     " << t.fval; return o.str();
         case STRING:        o << "STRING    " << t.sval; return o.str();
         case IDENTIFIER:    o << "IDENTFIER " << t.sval; return o.str();
-        case KEYWORD:       o << "KEYWORD   " << t.sval; return o.str();
+        case VAR:           o << "VAR       " << " "   ; return o.str();
         case COMMA:         o << "COMMA     " << ","   ; return o.str();
+        case IF:            o << "IF        " << " "   ; return o.str();
+        case ELSE:          o << "ELSE      " << " "   ; return o.str();
+        case RETURN:        o << "RETURN    " << " "   ; return o.str();
         case DOT:           o << "DOT       " << "."   ; return o.str();
         case LPAREN:        o << "OPEN      " << "("   ; return o.str();
         case LBRACE:        o << "OPEN      " << "{"   ; return o.str();
@@ -79,19 +86,19 @@ void TestLex()
         "0xFF",
         "0123",
         "0b1010",
-        "i32 a = -34",
+        "var a = -34",
         "a += 34",
         "print(player.position)",
-        "f32 result = add(1, 2)",
-        "i64 big = 10_000_000",
-        "string quote = \"Mim said \\\"holy shit, it works!\\\", Greg was not amused.\"",
-        "string name = \"mim\"",
+        "var result = add(1, 2)",
+        "var big = 10_000_000",
+        "var quote = \"Mim said \\\"holy shit, it works!\\\", Greg was not amused.\"",
+        "var name = \"mim\"",
         "if a >= b return a else return b",
         "test(a(), b)",
         "a %= 5",
-        "i32* pi = &a",
-        "f32 pi = 3.141",
-        "f32 angle = 0.01",
+        "var pi = &a",
+        "var pi = 3.141",
+        "var angle = 0.01",
         "log <<= 4",
         "log = 1 << 4",
     };
