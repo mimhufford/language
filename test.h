@@ -12,12 +12,19 @@ std::string DebugPrintDecl(Decl* d)
 {
     std::ostringstream o;
 
-    switch (d->type)
-    {
-        case VAR:     o << "(VAR " << d->datatype << " " << "d->val" << " " << DebugPrintDecl(d->expr) << ")"; break;
-        case LITERAL: o << "(LIT " << *(long long *)d->val << ")"; break;
-        default:      o << "UNHANDLED"; break;
-    }
+	if (!d)
+	{
+		o << "DID NOT PARSE";
+		return o.str();
+	}
+
+	switch (d->type)
+	{
+		case VARIABLE: o << "(VAR "  << d->name << " " << DebugPrintDecl(d->expr) << ")"; break;
+		case LITERAL:  o << "(LIT "  << d->ival << ")"; break;
+		case FUNCTION: o << "(FUNC " << d->name << "(PARAMS) (RET) " << "BLOCK" << ")"; break;
+		default:       o << "UNHANDLED"; break;
+	}
 
     return o.str();
 }
@@ -25,8 +32,8 @@ std::string DebugPrintDecl(Decl* d)
 void TestParse()
 {
     std::string tests[] = {
-        "i32 a = 4",
-        "void test() { f64 a = 15 }",
+        "var a = 4",
+        "func test() { {} var a = 15 }",
     };
 
     std::cout << "=PARSE==============\n";
@@ -36,7 +43,7 @@ void TestParse()
     {
         std::cout << test << "            \n";
         std::cout << "--------------------\n";
-        std::cout << DebugPrintDecl(Parse(Lex(test))) << "\n";
+        std::cout << DebugPrintDecl(Parse(Lex(test))) << "\n\n";
     }
     std::cout << "                    \n";
 }

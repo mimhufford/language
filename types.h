@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <string>
+#include <vector>
 #include <iostream>
 
 enum TokenType
@@ -68,7 +69,7 @@ struct Token
 
 enum DeclType
 {
-    VARIABLE, LITERAL
+    VARIABLE, LITERAL, FUNCTION
 };
 
 enum Type
@@ -78,10 +79,10 @@ enum Type
 
 struct Decl
 {
-    DeclType    type;
-    Type        datatype;
-    void*       val;
-    Decl*       expr;
-    Decl*       lhs;
-    Decl*       rhs;
+    DeclType           type;
+    Type               datatype;
+	std::string        name;
+    Decl*              expr;
+	long long          ival;
+	std::vector<Decl*> block;
 };
