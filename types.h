@@ -67,14 +67,27 @@ struct Token
     std::string  sval;
 };
 
-enum DeclType
-{
-    VARIABLE, LITERAL, FUNCTION
-};
-
 enum Type
 {
     I8, I16, I32, I64, U8, U16, U32, U64, F32, F64,
+};
+
+enum ExprType
+{
+	EXPR_BINARY, EXPR_INT, EXPR_IDENT,
+};
+
+struct Expr
+{
+	ExprType           type;
+	std::string        name;
+	long long          ival;
+	double		       fval;
+};
+
+enum DeclType
+{
+    VARIABLE, LITERAL, FUNCTION, STRUCT,
 };
 
 struct Decl
@@ -82,7 +95,20 @@ struct Decl
     DeclType           type;
     Type               datatype;
 	std::string        name;
-    Decl*              expr;
+    Expr*              expr;
 	long long          ival;
+	double		       fval;
 	std::vector<Decl*> block;
+};
+
+enum StmtType
+{
+	STMT_IF, STMT_LOOP, STMT_RETURN, STMT_BLOCK,
+};
+
+struct Stmt
+{
+	StmtType           type;
+	std::vector<Decl*> block;
+
 };

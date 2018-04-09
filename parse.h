@@ -9,12 +9,12 @@
 #include "types.h"
 #include "common.h"
  
-Decl* ParseLiteral(std::queue<Token>& tokens)
+Expr* ParseLiteral(std::queue<Token>& tokens)
 {
-    Decl* d     = new Decl;
-    d->type     = LITERAL;
-    d->ival     = tokens.front().ival;     tokens.pop();
-    return d;
+    Expr* e     = new Expr;
+    e->type     = EXPR_INT;
+    e->ival     = tokens.front().ival;     tokens.pop();
+    return e;
 }
 
 Decl* ParseVar(std::queue<Token>& tokens)

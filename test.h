@@ -8,6 +8,36 @@
 #include "lex.h"
 #include "parse.h"
 
+std::string DebugPrintDecl(Decl* d);
+
+
+std::string DebugPrintBlock(std::vector<Decl*> ds)
+{
+	std::ostringstream o;
+	o << "(BLOCK ";
+	
+	for (auto d : ds)
+	{
+		o << DebugPrintDecl(d);
+	}
+
+	o << ")";
+	return o.str();
+}
+
+std::string DebugPrintExpr(Expr* e)
+{
+	std::ostringstream o;
+
+	switch (e->type)
+	{
+		case EXPR_INT: o << e->ival; break;
+		default:       o << "UNHANDLED"; break;
+	}
+
+	return o.str();
+}
+
 std::string DebugPrintDecl(Decl* d)
 {
     std::ostringstream o;
@@ -20,9 +50,9 @@ std::string DebugPrintDecl(Decl* d)
 
 	switch (d->type)
 	{
-		case VARIABLE: o << "(VAR "  << d->name << " " << DebugPrintDecl(d->expr) << ")"; break;
+		case VARIABLE: o << "(VAR "  << d->name << " " << DebugPrintExpr(d->expr) << ")"; break;
 		case LITERAL:  o << "(LIT "  << d->ival << ")"; break;
-		case FUNCTION: o << "(FUNC " << d->name << "(PARAMS) (RET) " << "BLOCK" << ")"; break;
+		case FUNCTION: o << "(FUNC " << d->name << "(PARAMS) (RET) " << DebugPrintBlock(d->block) << ")"; break;
 		default:       o << "UNHANDLED"; break;
 	}
 
